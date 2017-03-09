@@ -22,6 +22,7 @@
 #include <linux/libfdt.h>
 #include <linux/debugfs.h>
 #include <linux/serial_core.h>
+#include <linux/cmdline_helper.h>
 
 #include <asm/setup.h>  /* for COMMAND_LINE_SIZE */
 #include <asm/page.h>
@@ -930,6 +931,11 @@ int __init early_init_dt_scan_chosen(unsigned long node, const char *uname,
 	/* Retrieve command line unless forcing */
 	if (read_dt_cmdline)
 		p = of_get_flat_dt_prop(node, "bootargs", &l);
+
+	p = del_cmdline(p, "androidboot.boot.veritymode=enforcing");
+	p = del_cmdline(p, "androidboot.boot.verifiedbootstate=green");
+	p = add_cmdline(p, "androidboot.boot.flash.locked=1");
+	p = del_cmdline(p, "androidboot.boot.ddrinfo=00000001");
 
 	if (p != NULL && l > 0) {
 		if (concat_cmdline) {

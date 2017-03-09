@@ -41,12 +41,14 @@
 #include "objsec.h"
 #include "conditional.h"
 
+#if defined(CONFIG_TZ_ICCC)
+#include <linux/security/Iccc_Interface.h>
+#endif
+
 /* Policy capability filenames */
 static char *policycap_names[] = {
 	"network_peer_controls",
-	"open_perms",
-	"redhat1",
-	"always_check_network"
+	"open_perms"
 };
 
 unsigned int selinux_checkreqprot = CONFIG_SECURITY_SELINUX_CHECKREQPROT_VALUE;
@@ -54,7 +56,7 @@ unsigned int selinux_checkreqprot = CONFIG_SECURITY_SELINUX_CHECKREQPROT_VALUE;
 static int __init checkreqprot_setup(char *str)
 {
 	unsigned long checkreqprot;
-	if (!kstrtoul(str, 0, &checkreqprot))
+	if (!strict_strtoul(str, 0, &checkreqprot))
 		selinux_checkreqprot = checkreqprot ? 1 : 0;
 	return 1;
 }
@@ -152,7 +154,7 @@ static ssize_t sel_write_enforce(struct file *file, const char __user *buf,
 		goto out;
 
 	/* No partial writes. */
-	length = -EINVAL;
+	length = EINVAL;
 	if (*ppos != 0)
 		goto out;
 
@@ -214,6 +216,20 @@ static ssize_t sel_write_enforce(struct file *file, const char __user *buf,
 #endif
 // ] SEC_SELINUX_PORTING_COMMON
 	length = count;
+
+#if defined(CONFIG_TZ_ICCC)
+	if (selinux_enabled && selinux_enforcing) {
+		if (0 != Iccc_SaveData_Kernel(SELINUX_STATUS,0x0)) {
+			printk(KERN_ERR "%s: Iccc_SaveData_Kernel failed, type = %x, value =%x\n", __func__,SELINUX_STATUS,0x0);
+		}
+	}
+	else {
+		if (0 != Iccc_SaveData_Kernel(SELINUX_STATUS,0x1)) {
+			printk(KERN_ERR "%s: Iccc_SaveData_Kernel failed, type = %x, value =%x\n", __func__,SELINUX_STATUS,0x1);
+		}
+	}
+#endif
+
 out:
 	free_page((unsigned long) page);
 	return length;
@@ -605,7 +621,7 @@ static ssize_t sel_write_context(struct file *file, char *buf, size_t size)
 	if (length)
 		goto out;
 
-	length = security_context_to_sid(buf, size, &sid, GFP_KERNEL);
+	length = security_context_to_sid(buf, size, &sid);
 	if (length)
 		goto out;
 
@@ -760,13 +776,11 @@ static ssize_t sel_write_access(struct file *file, char *buf, size_t size)
 	if (sscanf(buf, "%s %s %hu", scon, tcon, &tclass) != 3)
 		goto out;
 
-	length = security_context_to_sid(scon, strlen(scon) + 1, &ssid,
-					 GFP_KERNEL);
+	length = security_context_to_sid(scon, strlen(scon) + 1, &ssid);
 	if (length)
 		goto out;
 
-	length = security_context_to_sid(tcon, strlen(tcon) + 1, &tsid,
-					 GFP_KERNEL);
+	length = security_context_to_sid(tcon, strlen(tcon) + 1, &tsid);
 	if (length)
 		goto out;
 
@@ -848,13 +862,11 @@ static ssize_t sel_write_create(struct file *file, char *buf, size_t size)
 		objname = namebuf;
 	}
 
-	length = security_context_to_sid(scon, strlen(scon) + 1, &ssid,
-					 GFP_KERNEL);
+	length = security_context_to_sid(scon, strlen(scon) + 1, &ssid);
 	if (length)
 		goto out;
 
-	length = security_context_to_sid(tcon, strlen(tcon) + 1, &tsid,
-					 GFP_KERNEL);
+	length = security_context_to_sid(tcon, strlen(tcon) + 1, &tsid);
 	if (length)
 		goto out;
 
@@ -911,13 +923,11 @@ static ssize_t sel_write_relabel(struct file *file, char *buf, size_t size)
 	if (sscanf(buf, "%s %s %hu", scon, tcon, &tclass) != 3)
 		goto out;
 
-	length = security_context_to_sid(scon, strlen(scon) + 1, &ssid,
-					 GFP_KERNEL);
+	length = security_context_to_sid(scon, strlen(scon) + 1, &ssid);
 	if (length)
 		goto out;
 
-	length = security_context_to_sid(tcon, strlen(tcon) + 1, &tsid,
-					 GFP_KERNEL);
+	length = security_context_to_sid(tcon, strlen(tcon) + 1, &tsid);
 	if (length)
 		goto out;
 
@@ -969,7 +979,7 @@ static ssize_t sel_write_user(struct file *file, char *buf, size_t size)
 	if (sscanf(buf, "%s %s", con, user) != 2)
 		goto out;
 
-	length = security_context_to_sid(con, strlen(con) + 1, &sid, GFP_KERNEL);
+	length = security_context_to_sid(con, strlen(con) + 1, &sid);
 	if (length)
 		goto out;
 
@@ -1029,13 +1039,11 @@ static ssize_t sel_write_member(struct file *file, char *buf, size_t size)
 	if (sscanf(buf, "%s %s %hu", scon, tcon, &tclass) != 3)
 		goto out;
 
-	length = security_context_to_sid(scon, strlen(scon) + 1, &ssid,
-					 GFP_KERNEL);
+	length = security_context_to_sid(scon, strlen(scon) + 1, &ssid);
 	if (length)
 		goto out;
 
-	length = security_context_to_sid(tcon, strlen(tcon) + 1, &tsid,
-					 GFP_KERNEL);
+	length = security_context_to_sid(tcon, strlen(tcon) + 1, &tsid);
 	if (length)
 		goto out;
 
@@ -1229,7 +1237,7 @@ static void sel_remove_entries(struct dentry *de)
 	spin_lock(&de->d_lock);
 	node = de->d_subdirs.next;
 	while (node != &de->d_subdirs) {
-		struct dentry *d = list_entry(node, struct dentry, d_child);
+		struct dentry *d = list_entry(node, struct dentry, d_u.d_child);
 
 		spin_lock_nested(&d->d_lock, DENTRY_D_LOCK_NESTED);
 		list_del_init(node);
@@ -1703,12 +1711,12 @@ static void sel_remove_classes(void)
 
 	list_for_each(class_node, &class_dir->d_subdirs) {
 		struct dentry *class_subdir = list_entry(class_node,
-					struct dentry, d_child);
+					struct dentry, d_u.d_child);
 		struct list_head *class_subdir_node;
 
 		list_for_each(class_subdir_node, &class_subdir->d_subdirs) {
 			struct dentry *d = list_entry(class_subdir_node,
-						struct dentry, d_child);
+						struct dentry, d_u.d_child);
 
 			if (d->d_inode)
 				if (d->d_inode->i_mode & S_IFDIR)
