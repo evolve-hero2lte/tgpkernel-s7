@@ -404,7 +404,7 @@ static int low_level_set_brightness(struct dsim_device *dsim ,int force)
 
 #ifdef CONFIG_PANEL_SMART_DIMMING
 	if (panel->smart_on)
-		dsim_write_hl_data(dsim, S6E3HF4_AID, ARRAY_SIZE(S6E3HF4_AID));
+		dsim_write_hl_data(dsim, S6E3HF4_SEQ_AOR_CONTROL, ARRAY_SIZE(S6E3HF4_SEQ_AOR_CONTROL));
 	else
 #endif
 	dsim_panel_aid_ctrl(dsim);
@@ -413,16 +413,11 @@ static int low_level_set_brightness(struct dsim_device *dsim ,int force)
 
 #ifdef CONFIG_PANEL_SMART_DIMMING
 	if (panel->smart_on)
-		dsim_write_hl_data(dsim, S6E3HF4_VINT, ARRAY_SIZE(S6E3HF4_VINT));
+		dsim_write_hl_data(dsim, S6E3HF4_SEQ_VINT_SET, ARRAY_SIZE(S6E3HF4_SEQ_VINT_SET));
 	else
 #endif
 	dsim_panel_set_vint(dsim, force);
 
-#ifdef CONFIG_PANEL_SMART_DIMMING
-	if (panel->smart_on)
-		dsim_write_hl_data(dsim, HF4_A3_IRC_off, ARRAY_SIZE(HF4_A3_IRC_off));
-	else
-#endif
 	dsim_panel_irc_ctrl(dsim);
 
 	if (dsim_write_hl_data(dsim, SEQ_GAMMA_UPDATE, ARRAY_SIZE(SEQ_GAMMA_UPDATE)) < 0)
