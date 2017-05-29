@@ -18,7 +18,7 @@ DTCTOOL=$RDIR/.work/scripts/dtc/dtc
 INCDIR=$RDIR/.work/include
 PAGE_SIZE=2048
 DTB_PADDING=0
-KERNELNAME=TGPKernel
+KERNELNAME=TGPKernel.Lite
 KERNELCONFIG=tgpkernel
 ZIP_FILE_DIR=$RDIR/.work_zip/base
 
@@ -432,18 +432,18 @@ fi
 # PROGRAM START
 # -------------
 clear
-echo "TGPKernel S7 Build Script v$BUILD_SCRIPT -- Kernel Version: v$VERSION_NUMBER"
+echo "TGPKernel Lite S7 Build Script v$BUILD_SCRIPT -- Kernel Version: v$VERSION_NUMBER"
 echo ""
 echo " 0) Clean Workspace"
 echo "00) Clean CCACHE"
 echo ""
-echo " 1) Build TGPKernel boot.img for S7"
-echo " 2) Build TGPKernel boot.img for S7 Edge"
-echo " 3) Build TGPKernel boot.img for S7 + S7 Edge"
-echo " 4) Build TGPKernel boot.img and .zip for S7"
-echo " 5) Build TGPKernel boot.img and .zip for S7 Edge"
-echo " 6) Build TGPKernel boot.img and .zip for S7 + S7 Edge (Seperate)"
-echo " 7) Build TGPKernel boot.img and .zip for S7 + S7 Edge (All-In-One)"
+echo " 1) Build TGPKernel Lite boot.img for S7"
+echo " 2) Build TGPKernel Lite boot.img for S7 Edge"
+echo " 3) Build TGPKernel Lite boot.img for S7 + S7 Edge"
+echo " 4) Build TGPKernel Lite boot.img and .zip for S7"
+echo " 5) Build TGPKernel Lite boot.img and .zip for S7 Edge"
+echo " 6) Build TGPKernel Lite boot.img and .zip for S7 + S7 Edge (Seperate)"
+echo " 7) Build TGPKernel Lite boot.img and .zip for S7 + S7 Edge (All-In-One)"
 echo ""
 echo " 9) Exit"
 echo ""

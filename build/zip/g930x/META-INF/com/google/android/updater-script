@@ -1,6 +1,6 @@
-ui_print("***********************");
-ui_print("TGPKernel for Galaxy S7");
-ui_print("***********************");
+ui_print("****************************");
+ui_print("TGPKernel Lite for Galaxy S7");
+ui_print("****************************");
 ui_print("- Mounting /system Partition");
 mount("ext4", "EMMC", "/dev/block/platform/155a0000.ufs/by-name/SYSTEM", "/system");
 ui_print("- FLashing TGPKernel");
