@@ -1,7 +1,7 @@
 ui_print(" ");
-ui_print("*********************************");
-ui_print("TGPKernel for Galaxy S7 / S7 Edge");
-ui_print("*********************************");
+ui_print("****************************************");
+ui_print("TGPKernel PWMFix for Galaxy S7 / S7 Edge");
+ui_print("****************************************");
 ui_print("- Mounting /system Partition");
 mount("ext4", "EMMC", "/dev/block/platform/155a0000.ufs/by-name/SYSTEM", "/system");
 ifelse
