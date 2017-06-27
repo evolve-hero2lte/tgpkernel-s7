@@ -18,7 +18,7 @@ DTCTOOL=$RDIR/.work/scripts/dtc/dtc
 INCDIR=$RDIR/.work/include
 PAGE_SIZE=2048
 DTB_PADDING=0
-KERNELNAME=TGPKernel
+KERNELNAME=TGPKernel.Lite.S8Port
 KERNELCONFIG=tgpkernel
 ZIP_FILE_DIR=$RDIR/.work_zip/base
 
@@ -432,7 +432,7 @@ fi
 # PROGRAM START
 # -------------
 clear
-echo "TGPKernel S7 Build Script v$BUILD_SCRIPT -- Kernel Version: v$VERSION_NUMBER"
+echo "TGPKernel Lite S8Port Build Script v$BUILD_SCRIPT -- Kernel Version: v$VERSION_NUMBER"
 echo ""
 echo " 0) Clean Workspace"
 echo "00) Clean CCACHE"
