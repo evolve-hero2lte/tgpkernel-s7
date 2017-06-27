@@ -18,7 +18,7 @@ DTCTOOL=$RDIR/.work/scripts/dtc/dtc
 INCDIR=$RDIR/.work/include
 PAGE_SIZE=2048
 DTB_PADDING=0
-KERNELNAME=TGPKernel
+KERNELNAME=TGPKernel.S8Port
 KERNELCONFIG=tgpkernel
 ZIP_FILE_DIR=$RDIR/.work_zip/base
 
