@@ -1,7 +1,7 @@
 ui_print(" ");
-ui_print("****************************");
-ui_print("TGPKernel for Galaxy S7 Edge");
-ui_print("****************************");
+ui_print("*********************************");
+ui_print("TGPKernel Lite for Galaxy S7 Edge");
+ui_print("*********************************");
 ui_print("- Mounting /system Partition");
 mount("ext4", "EMMC", "/dev/block/platform/155a0000.ufs/by-name/SYSTEM", "/system");
 ui_print("- FLashing TGPKernel");
@@ -17,7 +17,6 @@ set_metadata_recursive("/system/app/mcRegistry", "uid", 0, "gid", 0, "dmode", 07
 set_metadata_recursive("/system/etc/init.d", "uid", 0, "gid", 2000, "dmode", 0755, "fmode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
 set_metadata("/system/vendor/lib/libsecure_storage.so", "uid", 0, "gid", 0, "mode", 0644, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
 set_metadata("/system/vendor/lib64/libsecure_storage.so", "uid", 0, "gid", 0, "mode", 0644, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
-set_metadata_recursive("/system/xbin", "uid", 0, "gid", 2000, "dmode", 0755, "fmode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
 ui_print("- Unmounting /system Partition");
 unmount("/system");
 ui_print("- Done");
