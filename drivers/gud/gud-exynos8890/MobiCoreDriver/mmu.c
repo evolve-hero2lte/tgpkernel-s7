@@ -258,7 +258,7 @@ static inline int map_buffer(struct task_struct *task, const void *data,
 			long gup_ret;
 			/* ExySp: for page migration */
 			unsigned int foll_flags =
-				FOLL_TOUCH | FOLL_GET | FOLL_WRITE | FOLL_CMA;
+				FOLL_TOUCH | FOLL_GET | FOLL_WRITE;
 
 			/* Buffer was allocated in user space */
 			down_read(&task->mm->mmap_sem);

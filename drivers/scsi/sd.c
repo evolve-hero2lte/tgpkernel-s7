@@ -3377,14 +3377,6 @@ static int sd_probe(struct device *dev)
 					     SD_UFS_TIMEOUT);
 	}
         
-#ifdef CONFIG_LARGE_DIRTY_BUFFER
-	if (!sdp->host->by_ufs) {
-		sdp->request_queue->backing_dev_info.max_ratio = 10;
-		sdp->request_queue->backing_dev_info.min_ratio = 10;
-		sdp->request_queue->backing_dev_info.capabilities |= BDI_CAP_STRICTLIMIT;
-	}
-#endif
-
 	device_initialize(&sdkp->dev);
 	sdkp->dev.parent = dev;
 	sdkp->dev.class = &sd_disk_class;

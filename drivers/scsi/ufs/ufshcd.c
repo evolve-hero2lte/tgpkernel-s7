@@ -1186,15 +1186,9 @@ static int ufshcd_map_sg(struct ufs_hba *hba, struct ufshcd_lrb *lrbp)
 			if (!((unsigned long)(sg_page(sg)->mapping) & 0x1)) {
 				if (sg_page(sg)->mapping && sg_page(sg)->mapping->key && \
 						!sg_page(sg)->mapping->plain_text) {
-					if ((unsigned int)(sg_page(sg)->index) >= 2) {
+					if ((unsigned int)(sg_page(sg)->index) >= 2)
 						sector_key |= UFS_FILE_ENCRYPTION_SECTOR_BEGIN;
-						if ((strncmp(sg_page(sg)->mapping->alg, "aes", sizeof("aes")) &&
-						                strncmp(sg_page(sg)->mapping->alg, "aesxts", sizeof("aesxts"))) ||
-						                !sg_page(sg)->mapping->key_length) {
-						        dev_info(hba->dev, "FMP file encryption is skipped due to invalid alg or key length\n");
-						        sector_key &= ~UFS_FILE_ENCRYPTION_SECTOR_BEGIN;
-						}
-					} else
+					else
 						sector_key &= ~UFS_FILE_ENCRYPTION_SECTOR_BEGIN;
 				} else {
 					sector_key &= ~UFS_FILE_ENCRYPTION_SECTOR_BEGIN;
@@ -1206,18 +1200,6 @@ static int ufshcd_map_sg(struct ufs_hba *hba, struct ufshcd_lrb *lrbp)
 			if (sector_key == UFS_BYPASS_SECTOR_BEGIN) {
 				SET_DAS(&prd_table[i], CLEAR);
 				SET_FAS(&prd_table[i], CLEAR);
-
-				if (cmd->request->part) {
-					if (cmd->request->part->info) {
-						if(!strncmp(cmd->request->part->info->volname, "userdata", sizeof("userdata")) \
-								&& fmp_encrypted \
-								&& (cmd->request->bio->bi_rw & REQ_META))
-							dev_err(hba->dev, "FMP doesn't work even if device is encrypted. direction(%d). sector(%ld). \
-												sensitive_data(%d)\n",
-									cmd->sc_data_direction, cmd->request->bio->bi_iter.bi_sector,
-									cmd->request->bio->bi_sensitive_data);
-					}
-				}
 			} else {
 				unsigned long flags;
 				ret = fmp_map_sg(prd_table, sg, sector_key, i, sector, cmd->request->bio);

@@ -223,6 +223,14 @@ config SOC_EXYNOS8890
 	select SOC_SAMSUNG
 	select SAMSUNG_DMADEV
 
+config MODEL_HERO
+	bool "Samsung Galaxy S7"
+	depends on SOC_EXYNOS8890
+
+config MODEL_HERO2
+	bool "Samsung Galaxy S7 Edge"
+	depends on SOC_EXYNOS8890
+
 config ARCH_EXYNOS8
 	bool "SAMSUNG EXYNOS8"
 	select HAVE_ARM_SCU if SMP
@@ -419,51 +427,6 @@ config ARM64_ERRATUM_845719
 	  the kernel if an affected CPU is detected.
 
 	  If unsure, say Y.
-	  
-config TIMA
-	bool "Enable TIMA(Trustzone based Integrity Measurement Archtecture feature"
-	default n
-
-config TIMA_LKMAUTH
-	bool "Enable LKM authentication by TIMA"
-	help
-	  TIMA authenticates loaded kernel modules. Disable it if you don't
-	  want TIMA enabled.
-
-config TIMA_RKP
-	depends on TIMA
-	default n
-	bool "Samsung KNOX realtime kernel protection depends on TIMA"
-	help
-	  this enables realtime kernel protection
-
-config TIMA_RKP_DEBUG
-	depends on TIMA_RKP
-	default n
-	bool "Support SS Sentinel for debugging"
-	help
-	  this enables to support sentinel
-
-config RKP_KDP
-	bool "Protection for cred structure"
-	depends on TIMA_RKP
-	default n
-	help
-	  Prevents unauthorized cred modification.
-
-config RKP_NS_PROT
-	bool "Protection for namespace structure"
-	depends on RKP_KDP
-	default n
-	help
-	  Prevents unauthorized namespace modification.
-
-config RKP_DMAP_PROT
-	bool "Page Double Mapping protection"
-	depends on RKP_KDP
-	default n
-	help
-	  Prevents unauthorized mapping for page table.
 
 endmenu
 
@@ -895,6 +858,17 @@ config BUILD_ARM64_APPENDED_DTB_IMAGE_NAMES
 	  Space separated list of names of dtbs to append when
 	  building a concatenated Image.gz-dtb.
 
+config DMI
+	bool "Enable support for SMBIOS (DMI) tables"
+	depends on EFI
+	default y
+	help
+	  This enables SMBIOS/DMI feature for systems.
+
+	  This option is only useful on systems that have UEFI firmware.
+	  However, even with this option, the resultant kernel should
+	  continue to boot on existing non-UEFI platforms.
+
 endmenu
 
 menu "Userspace binary formats"
@@ -956,73 +930,6 @@ source "drivers/cpuidle/Kconfig"
 source "drivers/cpufreq/Kconfig"
 
 endmenu
-
-#
-# BEGIN RKP_CFP CONFIG OPTIONS
-#
-
-menu "Control Flow Protection"
-
-config RKP_CFP
-	bool "Hyperdrive ROP protection"
-	depends on TIMA_RKP
-	# Disable RKP for now, keep getting TIMA_RKP_VMM_PANIC when doing sleep.S code for saving/restoring x17.
-	default n
-	help
-        Static binary instrumentation of direct/indirect branches to prevent 
-        return-oriented programming (ROP) attacks and jump-oriented programming (JOP) attacks.
-
-config RKP_CFP_ROPP
-	bool "Hyperdrive: encrypt return-addresses"
-	depends on TIMA_RKP
-	select RKP_CFP
-	select RKP_CFP_FIX_SMC_BUG
-	default n
-
-choice
-	prompt "ROPP key"
-	default RKP_CFP_ROPP_RANDOM_KEY
-	depends on RKP_CFP && RKP_CFP_ROPP
-	help
-	  ROPP key configuration
-
-config RKP_CFP_ROPP_HYPKEY
-	bool "Use hypervisor for key secure storage"
-	help
-        if n, use random key or zero key
-
-config RKP_CFP_ROPP_RANDOM_KEY
-	bool "Hyperdrive: use pseudo random key for return-address encryption"
-	help
-        if n, use hyp key or zero key
-
-config RKP_CFP_ROPP_ZERO_KEY
-	bool "Hyperdrive: use zero key for return-address encryption"
-	help
-        if n, use hyp key or random key
-endchoice
-
-config RKP_CFP_JOPP
-	bool "Just to function entry only, Restrict BLR jump target to a valid function entry point and no br in C code"
-	depends on TIMA_RKP
-	select RKP_CFP
-	default n
-
-config RKP_CFP_JOPP_MAGIC
-	hex "Magic number put just above function labels to restrict BLR to function entry points"
-	# depends on RKP_CFP && RKP_CFP_JOPP
-	# basically it depends on above line but it's needed for avoiding a build break
-	default "0xb3ea3bad"
-
-config RKP_CFP_FIX_SMC_BUG
-	bool "Hyperdrive: [INSECURE] hack broken smc calls to save/restore RRK after it clobbers it"
-	depends on RKP_CFP_ROPP
-	default n
-endmenu
-
-#
-# END RKP_CFP CONFIG OPTIONS
-#
 
 source "net/Kconfig"
 

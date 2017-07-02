@@ -64,10 +64,8 @@ enum {
 };
 
 #ifdef CONFIG_CMA
-bool is_cma_pageblock(struct page *page);
 #  define is_migrate_cma(migratetype) unlikely((migratetype) == MIGRATE_CMA)
 #else
-#  define is_cma_pageblock(page) false
 #  define is_migrate_cma(migratetype) false
 #endif
 
@@ -361,9 +359,6 @@ struct zone {
 	 */
 	unsigned long		dirty_balance_reserve;
 
-#ifdef CONFIG_CMA
-	bool			cma_alloc;
-#endif
 #ifndef CONFIG_SPARSEMEM
 	/*
 	 * Flags for a pageblock_nr_pages block. See pageblock-flags.h.

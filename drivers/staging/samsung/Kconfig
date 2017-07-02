@@ -29,18 +29,6 @@ config SEC_MISC
         help
           Samsung TN Misc extension Feature. Do additional work when Misc.
 
-config ARGOS
-	bool "Throughput monitoring Feature"
-	default n
-	help
-	  Check throughput and set appropriate system parameters(CPU freq, affinity, etc)
-
-config SENTINEL
-	bool "Memory Protection"
-	default n
-	help
-	  Memory Protection
-
 config SEC_DEBUG
 	bool "Enable TN debugging feature"
 	depends on EXYNOS_SNAPSHOT

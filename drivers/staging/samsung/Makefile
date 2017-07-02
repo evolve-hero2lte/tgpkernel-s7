@@ -24,10 +24,6 @@ obj-$(CONFIG_SEC_DEBUG)		+= sec_debug.o sec_getlog.o sec_gaf.o sec_data_param.o
 obj-$(CONFIG_SEC_UPLOAD)	+= sec_upload.o
 # Samsung Misc Feature
 obj-$(CONFIG_SEC_MISC)         += sec_misc.o
-# Samsung Argos
-obj-$(CONFIG_ARGOS)		+= sec_argos.o
-# Sentinel
-obj-$(CONFIG_SENTINEL)		+= sentinel.o
 # Samsung sec bsp Feature
 obj-$(CONFIG_SEC_BSP)          += sec_bsp.o
 obj-$(CONFIG_SEC_INITCALL_DEBUG)		+= sec_initcall_debug.o

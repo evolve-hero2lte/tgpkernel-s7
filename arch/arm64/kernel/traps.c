@@ -41,9 +41,6 @@
 #include <linux/sec_debug.h>
 #endif
 
-#ifdef CONFIG_RKP_CFP_ROPP
-#include <linux/rkp_cfp.h>
-#endif
 static const char *handler[]= {
 	"Synchronous Abort",
 	"IRQ",
@@ -142,9 +139,6 @@ static void dump_backtrace(struct pt_regs *regs, struct task_struct *tsk)
 #endif
 {
 	struct stackframe frame;
-#ifdef CONFIG_RKP_CFP_ROPP
-	unsigned long init_pc = 0x0, rrk = 0x0;
-#endif
 
 	pr_debug("%s(regs = %p tsk = %p)\n", __func__, regs, tsk);
 
@@ -168,16 +162,6 @@ static void dump_backtrace(struct pt_regs *regs, struct task_struct *tsk)
 		frame.pc = thread_saved_pc(tsk);
 	}
 
-#ifdef CONFIG_RKP_CFP_ROPP
-	init_pc = frame.pc;
-#ifdef CONFIG_RKP_CFP_ROPP_HYPKEY
-	rkp_call(CFP_ROPP_RET_KEY, (unsigned long) &(task_thread_info(tsk)->rrk), 0, 0, 0, 0);
-	asm("mov %0, x16" : "=r" (rrk));
-#else //CONFIG_RKP_CFP_ROPP_HYPKEY
-	rrk = task_thread_info(tsk)->rrk;
-#endif //CONFIG_RKP_CFP_ROPP_HYPKEY
-#endif //CONFIG_RKP_CFP_ROPP
-
 #ifdef CONFIG_KFAULT_AUTO_SUMMARY
 	if (auto_summary) {
 		pr_auto_once(2);
@@ -196,11 +180,6 @@ static void dump_backtrace(struct pt_regs *regs, struct task_struct *tsk)
 		ret = unwind_frame(&frame);
 		if (ret < 0)
 			break;
-#ifdef CONFIG_RKP_CFP_ROPP
-        if ((where != init_pc) && (0x1 == dump_stack_dec)){
-            where = where ^ rrk;
-        }
-#endif
 
 #ifdef CONFIG_KFAULT_AUTO_SUMMARY
 		if (auto_summary)
@@ -275,6 +254,7 @@ static int __die(const char *str, int err, struct thread_info *thread,
 
 		dump_instr(KERN_EMERG, regs);
 	}
+
 	return ret;
 }
 
@@ -481,7 +461,6 @@ asmlinkage void bad_mode(struct pt_regs *regs, int reason, unsigned int esr)
 
 	pr_auto(ASL1, "Bad mode in %s handler detected, code 0x%08x\n",
 		handler[reason], esr);
-
 	__show_regs(regs);
 
 	info.si_signo = SIGILL;

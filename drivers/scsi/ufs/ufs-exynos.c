@@ -13,9 +13,7 @@
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/clk.h>
-#if defined(CONFIG_FMP_UFS)
 #include <linux/smc.h>
-#endif
 
 #include <soc/samsung/exynos-pm.h>
 #include <soc/samsung/exynos-powermode.h>
@@ -1238,19 +1236,11 @@ static void exynos_ufs_config_smu(struct exynos_ufs *ufs)
 {
 	int ret;
 
-#if defined(CONFIG_UFS_FMP_DM_CRYPT) || defined(CONFIG_UFS_FMP_ECRYPT_FS)
-	ret = exynos_smc(SMC_CMD_FMP, FMP_SECURITY, UFS_FMP, FMP_DESC_ON);
-#else
 	ret = exynos_smc(SMC_CMD_FMP, FMP_SECURITY, UFS_FMP, FMP_DESC_OFF);
-#endif
 	if (ret)
 		dev_err(ufs->dev, "Fail to smc call for FMP SECURITY\n");
 
-#if defined(CONFIG_UFS_FMP_DM_CRYPT) || defined(CONFIG_UFS_FMP_ECRYPT_FS)
-	ret = exynos_smc(SMC_CMD_SMU, FMP_SMU_INIT, FMP_SMU_ON, 0);
-#else
 	ret = exynos_smc(SMC_CMD_SMU, FMP_SMU_INIT, FMP_SMU_OFF, 0);
-#endif
 	if (ret)
 		dev_err(ufs->dev, "Fail to smc call for FMP SMU Initialization\n");
 
@@ -1967,9 +1957,7 @@ static int __exynos_ufs_suspend(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 
 static int __exynos_ufs_resume(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 {
-#if defined(CONFIG_UFS_FMP_DM_CRYPT) || defined(CONFIG_UFS_FMP_ECRYPT_FS)
 	int ret;
-#endif
 	struct exynos_ufs *ufs = to_exynos_ufs(hba);
 
 	exynos_ufs_ctrl_phy_pwr(ufs, true);
@@ -1979,11 +1967,7 @@ static int __exynos_ufs_resume(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 	exynos_ufs_ctrl_hci_core_clk(ufs, false);
 	exynos_ufs_config_smu(ufs);
 
-#if defined(CONFIG_UFS_FMP_DM_CRYPT) || defined(CONFIG_UFS_FMP_ECRYPT_FS)
-	ret = exynos_smc(SMC_CMD_RESUME, 0, UFS_FMP, FMP_DESC_ON);
-#else
 	ret = exynos_smc(SMC_CMD_RESUME, 0, UFS_FMP, FMP_DESC_OFF);
-#endif
 
 	if (ufshcd_is_clkgating_allowed(hba))
 		clk_disable_unprepare(ufs->clk_hci);

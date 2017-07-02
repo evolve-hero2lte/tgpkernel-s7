@@ -1807,11 +1807,11 @@ cifs_invalidate_mapping(struct inode *inode)
  * @word: long word containing the bit lock
  */
 static int
-cifs_wait_bit_killable(struct wait_bit_key *key, int mode)
+cifs_wait_bit_killable(struct wait_bit_key *key)
 {
-	freezable_schedule_unsafe();
-	if (signal_pending_state(mode, current))
+	if (fatal_signal_pending(current))
 		return -ERESTARTSYS;
+	freezable_schedule_unsafe();
 	return 0;
 }
 

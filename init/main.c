@@ -97,10 +97,6 @@
 #include <asm/smp.h>
 #endif
 
-#ifdef CONFIG_TIMA_RKP
-#include <linux/vmm.h>
-#include <linux/rkp_entry.h> 
-#endif //CONFIG_TIMA_RKP
 #ifdef CONFIG_RELOCATABLE_KERNEL
 #include <linux/memblock.h>
 #endif
@@ -118,10 +114,6 @@ static inline void mark_rodata_ro(void) { }
 extern void ptrack_init(void);
 #endif
 
-#ifdef CONFIG_TIMA_RKP
-int rkp_support_large_memory;
-EXPORT_SYMBOL(rkp_support_large_memory);
-#endif
 /*
  * Debug helper: via this flag we know that we are in 'early bootup code'
  * where only the boot processor is running with IRQ disabled.  This means
@@ -464,10 +456,6 @@ static noinline void __init_refok rest_init(void)
 	cpu_startup_entry(CPUHP_ONLINE);
 }
 
-#ifdef CONFIG_RKP_KDP
-RKP_RO_AREA int is_boot_recovery = 0;
-#endif
-
 /* Check for early params. */
 static int __init do_early_param(char *param, char *val, const char *unused)
 {
@@ -483,23 +471,6 @@ static int __init do_early_param(char *param, char *val, const char *unused)
 		}
 	}
 	/* We accept everything at this stage. */
-#ifdef CONFIG_KNOX_KAP
-	if ((strncmp(param, "androidboot.security_mode", 26) == 0)) {
-		pr_warn("val = %d\n",*val);
-	        if ((strncmp(val, "1526595585", 10) == 0)) {
-				pr_info("Security Boot Mode \n");
-			}
-	}
-
-#endif
-#ifdef CONFIG_RKP_KDP
-	if ((strncmp(param, "bootmode", 9) == 0)) {
-			//printk("\n RKP22 In Recovery Mode= %d\n",*val);
-			if ((strncmp(val, "2", 2) == 0)) {
-				is_boot_recovery = 1;
-			}
-	}
-#endif
 	return 0;
 }
 
@@ -566,74 +537,7 @@ static void __init mm_init(void)
 	ptrack_init();
 #endif
 }
-#ifdef	CONFIG_TIMA_RKP
 
-__attribute__((section(".rkp.bitmap"))) u8 rkp_pgt_bitmap_arr[0x20000] = {0};
-__attribute__((section(".rkp.dblmap"))) u8 rkp_map_bitmap_arr[0x20000] = {0};
-
-extern void* vmm_extra_mem;
-u8 rkp_started = 0;
-static void rkp_init(void)
-{
-	rkp_init_t init;
-	init.magic = RKP_INIT_MAGIC;
-	init.vmalloc_start = VMALLOC_START;
-	init.vmalloc_end = (u64)high_memory;
-	init.init_mm_pgd = (u64)__pa(swapper_pg_dir);
-	init.id_map_pgd = (u64)__pa(idmap_pg_dir);
-	init.rkp_pgt_bitmap = (u64)__pa(rkp_pgt_bitmap);
-	init.rkp_map_bitmap = (u64)__pa(rkp_map_bitmap);
-	init.rkp_pgt_bitmap_size = RKP_PGT_BITMAP_LEN;
-	init.zero_pg_addr = page_to_phys(empty_zero_page);
-	init._text = (u64) _text;
-	init._etext = (u64) _etext;
-	if (!vmm_extra_mem) {
-		printk(KERN_ERR"Disable RKP: Failed to allocate extra mem\n");
-		return;
-	}
-	init.extra_memory_addr = __pa(vmm_extra_mem);
-	init.extra_memory_size = 0x600000;
-	init._srodata = (u64) __start_rodata;
-	init._erodata =(u64) __end_rodata;
-	init.large_memory = rkp_support_large_memory;
-
-	rkp_call(RKP_INIT, (u64)&init, 0, 0, 0, 0);
-	rkp_started = 1;
-	return;
-}
-#endif
-#ifdef CONFIG_RKP_KDP
-
-void kdp_init(void)
-{
-	kdp_init_t cred;
-
-	cred.credSize 	= sizeof(struct cred);
-	cred.sp_size	= rkp_get_task_sec_size();
-	cred.pgd_mm 	= offsetof(struct mm_struct,pgd);
-	cred.uid_cred	= offsetof(struct cred,uid);
-	cred.euid_cred	= offsetof(struct cred,euid);
-	cred.gid_cred	= offsetof(struct cred,gid);
-	cred.egid_cred	= offsetof(struct cred,egid);
-
-	cred.bp_pgd_cred 	= offsetof(struct cred,bp_pgd);
-	cred.bp_task_cred 	= offsetof(struct cred,bp_task);
-	cred.type_cred 		= offsetof(struct cred,type);
-	cred.security_cred 	= offsetof(struct cred,security);
-	cred.usage_cred 	= offsetof(struct cred,use_cnt);
-
-	cred.cred_task  	= offsetof(struct task_struct,cred);
-	cred.mm_task 		= offsetof(struct task_struct,mm);
-	cred.pid_task		= offsetof(struct task_struct,pid);
-	cred.rp_task		= offsetof(struct task_struct,real_parent);
-	cred.comm_task 		= offsetof(struct task_struct,comm);
-
-	cred.bp_cred_secptr 	= rkp_get_offset_bp_cred();
-
-	cred.task_threadinfo = offsetof(struct thread_info,task);
-	rkp_call(RKP_CMDID(0x40),(u64)&cred,0,0,0,0);
-}
-#endif /*CONFIG_RKP_KDP*/
 asmlinkage __visible void __init start_kernel(void)
 {
 	char *command_line;
@@ -701,26 +605,6 @@ asmlinkage __visible void __init start_kernel(void)
 #if defined(CONFIG_SEC_BSP)
 	sec_boot_stat_get_start_kernel();
 #endif
-
-#ifdef CONFIG_TIMA_RKP
-	vmm_init();
-	rkp_init();
-#ifdef CONFIG_TIMA_RKP_DEBUG
-	rkp_call(RKP_DEBUG, 0, 0, 0, 0, 0);
-#endif
-#ifdef CONFIG_RKP_CFP_ROPP
-	rkp_call(CFP_ROPP_INIT, 0, 0, 0, 0, 0);
-#endif
-#ifdef CONFIG_RKP_CFP_JOPP
-	rkp_call(CFP_JOPP_INIT, 0, 0, 0, 0, 0);
-#endif
-#ifdef CONFIG_RELOCATABLE_KERNEL
-	rkp_call(KASLR_MEM_RESERVE, kaslr_mem, kaslr_size, 0, 0, 0); 
-#endif 
-#ifdef CONFIG_RKP_KDP
-	rkp_cred_enable = 1;
-#endif /*CONFIG_RKP_KDP*/
-#endif //CONFIG_TIMA_RKP
 
 	/*
 	 * Set up the scheduler prior starting any interrupts (such as the
@@ -809,20 +693,12 @@ asmlinkage __visible void __init start_kernel(void)
 	init_espfix_bsp();
 #endif
 	thread_info_cache_init();
-#ifdef CONFIG_RKP_KDP
-	if (rkp_cred_enable) 
-		kdp_init();
-#endif /*CONFIG_RKP_KDP*/
 	cred_init();
 	fork_init(totalram_pages);
 	proc_caches_init();
 	buffer_init();
 	key_init();
 	security_init();
-#ifdef CONFIG_RKP_KDP
-	if (rkp_cred_enable) 
-		rkp_call(RKP_CMDID(0x51),(u64)__rkp_ro_start,0,0,0,0);
-#endif /*CONFIG_RKP_KDP*/
 	dbg_late_init();
 	vfs_caches_init(totalram_pages);
 	signals_init();

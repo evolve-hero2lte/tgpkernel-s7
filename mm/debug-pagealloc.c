@@ -5,9 +5,6 @@
 #include <linux/page-debug-flags.h>
 #include <linux/poison.h>
 #include <linux/ratelimit.h>
-#ifdef CONFIG_SENTINEL
-#include <linux/sentinel.h>
-#endif
 
 static inline void set_page_poison(struct page *page)
 {
@@ -98,16 +95,8 @@ static void unpoison_pages(struct page *page, int n)
 
 void kernel_map_pages(struct page *page, int numpages, int enable)
 {
-	if (enable) {
-#ifdef CONFIG_SENTINEL
-		sentinel_uninstall_cctv((unsigned long)page_address(page), numpages);
-#endif
+	if (enable)
 		unpoison_pages(page, numpages);
-	}
-	else {
+	else
 		poison_pages(page, numpages);
-#ifdef CONFIG_SENTINEL
-		sentinel_install_cctv((unsigned long)page_address(page), numpages);
-#endif
-	}
 }

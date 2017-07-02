@@ -21,10 +21,6 @@
 #include <asm/memory.h>
 #include <asm/pgtable-hwdef.h>
 
-#ifdef CONFIG_TIMA_RKP
-#include <linux/rkp_entry.h> 
-#endif /* CONFIG_TIMA_RKP */
-
 /*
  * Software defined PTE bits definition.
  */
@@ -200,32 +196,9 @@ static inline pte_t pte_mkspecial(pte_t pte)
 {
 	return set_pte_bit(pte, __pgprot(PTE_SPECIAL));
 }
-#ifdef CONFIG_TIMA_RKP
-extern  int printk(const char *s, ...);
-extern void panic(const char *fmt, ...);
-#endif /* CONFIG_TIMA_RKP */
+
 static inline void set_pte(pte_t *ptep, pte_t pte)
 {
-#ifdef CONFIG_TIMA_RKP
-	if (pte && rkp_is_pg_dbl_mapped((u64)(pte)) ) {
-		panic("TIMA RKP : Double mapping Detected pte = 0x%llx ptep = %p",(u64)pte, ptep);
-		return;
-	}
-	if (rkp_is_pg_protected((u64)ptep)) {
-		rkp_call(RKP_PTE_SET, (unsigned long)ptep, pte_val(pte), 0, 0, 0);
-	} else {
-		asm volatile("mov x1, %0\n"
-					  "mov x2, %1\n"
- 					  "str x2, [x1]\n"
-		:
-		: "r" (ptep), "r" (pte)
-		: "x1", "x2", "memory" );
-		if (pte_valid_not_user(pte)) {
-			dsb(ishst);
-			isb();
-		}
-	}
-#else
 	*ptep = pte;
 
 	/*
@@ -236,7 +209,6 @@ static inline void set_pte(pte_t *ptep, pte_t pte)
 		dsb(ishst);
 		isb();
 	}
-#endif /* CONFIG_TIMA_RKP */
 }
 
 extern void __sync_icache_dcache(pte_t pteval, unsigned long addr);
@@ -291,6 +263,11 @@ static inline pte_t pmd_pte(pmd_t pmd)
 static inline pmd_t pte_pmd(pte_t pte)
 {
 	return __pmd(pte_val(pte));
+}
+
+static inline pgprot_t mk_sect_prot(pgprot_t prot)
+{
+	return __pgprot(pgprot_val(prot) & ~PTE_TABLE_BIT);
 }
 
 /*
@@ -373,30 +350,11 @@ extern pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
 				 PUD_TYPE_SECT)
 #endif
 
-#ifdef CONFIG_TIMA_RKP
-#define pmd_block(pmd)      ((pmd_val(pmd) & 0x3)  == 1)
-#endif
-
 static inline void set_pmd(pmd_t *pmdp, pmd_t pmd)
 {
-#ifdef CONFIG_TIMA_RKP
-	if (rkp_is_pg_protected((u64)pmdp)) {
-		rkp_call(RKP_PMD_SET, (unsigned long)pmdp, pmd_val(pmd), 0, 0, 0);
-	} else {
-		asm volatile("mov x1, %0\n"
-					  "mov x2, %1\n"
- 					  "str x2, [x1]\n"
-		:
-		: "r" (pmdp), "r" (pmd)
-		: "x1", "x2", "memory" );
-		dsb(ishst);
-		isb();
-	}
-#else 
 	*pmdp = pmd;
 	dsb(ishst);
 	isb();
-#endif
 }
 
 static inline void pmd_clear(pmd_t *pmdp)
@@ -427,24 +385,9 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
 
 static inline void set_pud(pud_t *pudp, pud_t pud)
 {
-#ifdef CONFIG_TIMA_RKP
-	if (rkp_is_pg_protected((u64)pudp)) {
-		rkp_call(RKP_PGD_SET, (unsigned long)pudp, pud_val(pud), 0, 0, 0);
-	} else {
-		asm volatile("mov x1, %0\n"
-					  "mov x2, %1\n"
- 					  "str x2, [x1]\n"
-		:
-		: "r" (pudp), "r" (pud)
-		: "x1", "x2", "memory" );
-		dsb(ishst);
-		isb();
-	}
-#else
 	*pudp = pud;
 	dsb(ishst);
 	isb();
-#endif
 }
 
 static inline void pud_clear(pud_t *pudp)

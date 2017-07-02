@@ -1351,173 +1351,6 @@ static ssize_t show_cpufreq_table(struct kobject *kobj,
 
 	return count - 1;
 }
-
-static ssize_t show_cpufreq_min_limit(struct kobject *kobj,
-				struct attribute *attr, char *buf)
-{
-	ssize_t	nsize = 0;
-	unsigned int cluster1_qos_min = pm_qos_request(qos_min_class[CL_ONE]);
-	unsigned int cluster0_qos_min = pm_qos_request(qos_min_class[CL_ZERO]);
-
-#ifdef CONFIG_SCHED_HMP
-	if (cluster1_qos_min > 0 && get_hmp_boost())
-#else
-	if (cluster1_qos_min > 0)
-#endif
-	{
-		if (cluster1_qos_min > freq_max[CL_ONE])
-			cluster1_qos_min = freq_max[CL_ONE];
-		else if (cluster1_qos_min < freq_min[CL_ONE])
-			cluster1_qos_min = freq_min[CL_ONE];
-		nsize = snprintf(buf, 10, "%u\n", cluster1_qos_min);
-	} else if (cluster0_qos_min > 0) {
-		if (cluster0_qos_min > freq_max[CL_ZERO])
-			cluster0_qos_min = freq_max[CL_ZERO];
-		if (cluster0_qos_min < freq_min[CL_ZERO])
-			cluster0_qos_min = freq_min[CL_ZERO];
-		nsize = snprintf(buf, 10, "%u\n", cluster0_qos_min / LIMIT_FREQ_DIVIDER);
-	} else if (cluster0_qos_min == 0) {
-		cluster0_qos_min = freq_min[CL_ZERO];
-		nsize = snprintf(buf, 10, "%u\n", cluster0_qos_min / LIMIT_FREQ_DIVIDER);
-	}
-
-	return nsize;
-}
-
-static ssize_t store_cpufreq_min_limit(struct kobject *kobj, struct attribute *attr,
-					const char *buf, size_t count)
-{
-	int cluster1_input, cluster0_input;
-
-	if (!sscanf(buf, "%8d", &cluster1_input))
-		return -EINVAL;
-
-	if (cluster1_input >= (int)freq_min[CL_ONE]) {
-#ifdef CONFIG_SCHED_HMP
-		if (!hmp_boosted) {
-			if (set_hmp_boost(1) < 0)
-				pr_err("%s: failed HMP boost enable\n",
-							__func__);
-			else
-				hmp_boosted = true;
-		}
-#endif
-		cluster1_input = min(cluster1_input, (int)freq_max[CL_ONE]);
-		if (exynos_info[CL_ZERO]->boost_freq)
-			cluster0_input = exynos_info[CL_ZERO]->boost_freq;
-		else
-			cluster0_input = core_max_qos_const[CL_ZERO].default_value;
-	} else if (cluster1_input < (int)freq_min[CL_ONE]) {
-#ifdef CONFIG_SCHED_HMP
-		if (hmp_boosted) {
-			if (set_hmp_boost(0) < 0)
-				pr_err("%s: failed HMP boost disable\n",
-							__func__);
-			else
-				hmp_boosted = false;
-		}
-#endif
-		if (cluster1_input < 0) {
-			cluster1_input = qos_min_default_value[CL_ONE];
-			cluster0_input = qos_min_default_value[CL_ZERO];
-		} else {
-			cluster0_input = cluster1_input * LIMIT_FREQ_DIVIDER;
-			if (cluster0_input > 0)
-				cluster0_input = min(cluster0_input, (int)freq_max[CL_ZERO]);
-			cluster1_input = qos_min_default_value[CL_ONE];
-		}
-	}
-
-	if (pm_qos_request_active(&core_min_qos[CL_ONE]))
-		pm_qos_update_request(&core_min_qos[CL_ONE], cluster1_input);
-	if (pm_qos_request_active(&core_min_qos[CL_ZERO]))
-		pm_qos_update_request(&core_min_qos[CL_ZERO], cluster0_input);
-
-	return count;
-}
-
-static ssize_t show_cpufreq_max_limit(struct kobject *kobj,
-				struct attribute *attr, char *buf)
-{
-	ssize_t	nsize = 0;
-	unsigned int cluster1_qos_max = pm_qos_request(qos_max_class[CL_ONE]);
-	unsigned int cluster0_qos_max = pm_qos_request(qos_max_class[CL_ZERO]);
-
-	if (cluster1_qos_max > 0) {
-		if (cluster1_qos_max < freq_min[CL_ONE])
-			cluster1_qos_max = freq_min[CL_ONE];
-		else if (cluster1_qos_max > freq_max[CL_ONE])
-			cluster1_qos_max = freq_max[CL_ONE];
-		nsize = snprintf(buf, 10, "%u\n", cluster1_qos_max);
-	} else if (cluster0_qos_max > 0) {
-		if (cluster0_qos_max < freq_min[CL_ZERO])
-			cluster0_qos_max = freq_min[CL_ZERO];
-		if (cluster0_qos_max > freq_max[CL_ZERO])
-			cluster0_qos_max = freq_max[CL_ZERO];
-		nsize = snprintf(buf, 10, "%u\n", cluster0_qos_max / LIMIT_FREQ_DIVIDER);
-	} else if (cluster0_qos_max == 0) {
-		cluster0_qos_max = freq_min[CL_ZERO];
-		nsize = snprintf(buf, 10, "%u\n", cluster0_qos_max / LIMIT_FREQ_DIVIDER);
-	}
-
-	return nsize;
-}
-
-static void enable_nonboot_cluster_cpus(void)
-{
-	pm_qos_update_request(&cpufreq_cpu_hotplug_max_request, NR_CPUS);
-}
-
-static void disable_nonboot_cluster_cpus(void)
-{
-	pm_qos_update_request(&cpufreq_cpu_hotplug_max_request, NR_CLUST1_CPUS);
-}
-
-static ssize_t store_cpufreq_max_limit(struct kobject *kobj, struct attribute *attr,
-					const char *buf, size_t count)
-{
-	int cluster1_input, cluster0_input;
-
-	if (!sscanf(buf, "%8d", &cluster1_input))
-		return -EINVAL;
-
-	if (cluster1_input >= (int)freq_min[CL_ONE]) {
-		if (cluster1_hotplugged) {
-			enable_nonboot_cluster_cpus();
-			cluster1_hotplugged = false;
-		}
-
-		cluster1_input = max(cluster1_input, (int)freq_min[CL_ONE]);
-		cluster0_input = core_max_qos_const[CL_ZERO].default_value;
-	} else if (cluster1_input < (int)freq_min[CL_ONE]) {
-		if (cluster1_input < 0) {
-			if (cluster1_hotplugged) {
-				enable_nonboot_cluster_cpus();
-				cluster1_hotplugged = false;
-			}
-
-			cluster1_input = core_max_qos_const[CL_ONE].default_value;
-			cluster0_input = core_max_qos_const[CL_ZERO].default_value;
-		} else {
-			cluster0_input = cluster1_input * LIMIT_FREQ_DIVIDER;
-			if (cluster0_input > 0)
-				cluster0_input = max(cluster0_input, (int)freq_min[CL_ZERO]);
-			cluster1_input = qos_min_default_value[CL_ONE];
-
-			if (!cluster1_hotplugged) {
-				disable_nonboot_cluster_cpus();
-				cluster1_hotplugged = true;
-			}
-		}
-	}
-
-	if (pm_qos_request_active(&core_max_qos[CL_ONE]))
-		pm_qos_update_request(&core_max_qos[CL_ONE], cluster1_input);
-	if (pm_qos_request_active(&core_max_qos[CL_ZERO]))
-		pm_qos_update_request(&core_max_qos[CL_ZERO], cluster0_input);
-
-	return count;
-}
 #endif
 
 #ifdef CONFIG_SW_SELF_DISCHARGING
@@ -1699,12 +1532,6 @@ static struct global_attr smpl_warn_ctrl =
 			show_cpufreq_smpl_warn_ctrl, store_cpufreq_smpl_warn_ctrl);
 static struct global_attr cpufreq_table =
 		__ATTR(cpufreq_table, S_IRUGO, show_cpufreq_table, NULL);
-static struct global_attr cpufreq_min_limit =
-		__ATTR(cpufreq_min_limit, S_IRUGO | S_IWUSR,
-			show_cpufreq_min_limit, store_cpufreq_min_limit);
-static struct global_attr cpufreq_max_limit =
-		__ATTR(cpufreq_max_limit, S_IRUGO | S_IWUSR,
-			show_cpufreq_max_limit, store_cpufreq_max_limit);
 #endif
 
 #ifdef CONFIG_SW_SELF_DISCHARGING
@@ -2247,18 +2074,6 @@ static int exynos_cpufreq_init(void)
 		pr_err("%s: failed to create cpufreq_table sysfs interface\n", __func__);
 		goto err_cpu_table;
 	}
-
-	ret = sysfs_create_file(power_kobj, &cpufreq_min_limit.attr);
-	if (ret) {
-		pr_err("%s: failed to create cpufreq_min_limit sysfs interface\n", __func__);
-		goto err_cpufreq_min_limit;
-	}
-
-	ret = sysfs_create_file(power_kobj, &cpufreq_max_limit.attr);
-	if (ret) {
-		pr_err("%s: failed to create cpufreq_max_limit sysfs interface\n", __func__);
-		goto err_cpufreq_max_limit;
-	}
 #endif
 
 #ifdef CONFIG_SW_SELF_DISCHARGING
@@ -2277,15 +2092,8 @@ static int exynos_cpufreq_init(void)
 
 #ifdef CONFIG_SW_SELF_DISCHARGING
 err_cpufreq_self_discharging:
-#ifdef CONFIG_PM
-	sysfs_remove_file(power_kobj, &cpufreq_max_limit.attr);
-#endif
 #endif
 #ifdef CONFIG_PM
-err_cpufreq_max_limit:
-	sysfs_remove_file(power_kobj, &cpufreq_min_limit.attr);
-err_cpufreq_min_limit:
-	sysfs_remove_file(power_kobj, &cpufreq_table.attr);
 err_cpu_table:
 	cpufreq_sysfs_remove_group(&mp_attr_group);
 #endif
@@ -2725,7 +2533,6 @@ static int exynos_mp_cpufreq_remove(struct platform_device *pdev)
 #endif
 
 #ifdef CONFIG_PM
-	sysfs_remove_file(power_kobj, &cpufreq_min_limit.attr);
 	sysfs_remove_file(power_kobj, &cpufreq_table.attr);
 	cpufreq_sysfs_remove_group(&mp_attr_group);
 #endif

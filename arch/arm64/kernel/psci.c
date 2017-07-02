@@ -32,9 +32,6 @@
 #include <asm/suspend.h>
 #include <asm/system_misc.h>
 
-#ifdef CONFIG_RKP_CFP_FIX_SMC_BUG
-#include <linux/rkp_cfp.h>
-#endif
 #define PSCI_POWER_STATE_TYPE_STANDBY		0
 #define PSCI_POWER_STATE_TYPE_POWER_DOWN	1
 
@@ -139,13 +136,7 @@ static noinline int __invoke_psci_fn_smc(u64 function_id, u64 arg0, u64 arg1,
 			__asmeq("%1", "x1")
 			__asmeq("%2", "x2")
 			__asmeq("%3", "x3")
-#ifdef CONFIG_RKP_CFP_FIX_SMC_BUG
-			PRE_SMC_INLINE
-#endif
 			"smc	#0\n"
-#ifdef CONFIG_RKP_CFP_FIX_SMC_BUG
-			POST_SMC_INLINE
-#endif
 		: "+r" (function_id)
 		: "r" (arg0), "r" (arg1), "r" (arg2));
 

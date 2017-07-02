@@ -214,7 +214,7 @@ void __init proc_root_init(void)
 
 #ifdef CONFIG_DEFERRED_INITCALLS
 	proc_create("deferred_initcalls", 0, NULL, &deferred_initcalls_fops);
-#endif	
+#endif
 	proc_thread_self_init();
 	proc_symlink("mounts", NULL, "self/mounts");
 
