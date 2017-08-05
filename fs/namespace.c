@@ -3160,7 +3160,18 @@ bool fs_fully_visible(struct file_system_type *type)
 	down_read(&namespace_sem);
 	list_for_each_entry(mnt, &ns->list, mnt_list) {
 		struct mount *child;
+#ifdef CONFIG_RKP_NS_PROT
+		if (mnt->mnt->mnt_sb->s_type != type)
+			continue;
+#else
 		if (mnt->mnt.mnt_sb->s_type != type)
+			continue;
+#endif
+
+		/* This mount is not fully visible if it's root directory
+		 * is not the root directory of the filesystem.
+		 */
+		if (mnt->mnt.mnt_root != mnt->mnt.mnt_sb->s_root)
 			continue;
 
 		/* This mount is not fully visible if there are any child mounts
