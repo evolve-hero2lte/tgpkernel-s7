@@ -67,8 +67,8 @@
 #include <linux/atomic.h>
 #include <net/dst.h>
 #include <net/checksum.h>
-#include <linux/net_tstamp.h>
 #include <net/tcp_states.h>
+#include <linux/net_tstamp.h>
 
 struct cgroup;
 struct cgroup_subsys;
@@ -2275,7 +2275,7 @@ static inline struct sock *skb_steal_sock(struct sk_buff *skb)
  */
 static inline bool sk_fullsock(const struct sock *sk)
 {
-	return (1 << sk->sk_state) & ~(TCPF_TIME_WAIT);
+	return (1 << sk->sk_state) & ~(TCPF_TIME_WAIT | TCPF_NEW_SYN_RECV);
 }
 
 void sock_enable_timestamp(struct sock *sk, int flag);
