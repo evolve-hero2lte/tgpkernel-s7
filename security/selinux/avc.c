@@ -991,7 +991,7 @@ static noinline int avc_denied(u32 ssid, u32 tsid,
 		return -EACCES;
 
 #if defined(CONFIG_SECURITY_SELINUX_ALWAYS_ENFORCE)
-	if (selinux_enforcing && !(avd->flags & AVD_FLAGS_PERMISSIVE))
+	if (!(avd->flags & AVD_FLAGS_PERMISSIVE))
 		return -EACCES;
 #elif !defined(CONFIG_SECURITY_SELINUX_NEVER_ENFORCE)
 	if (selinux_enforcing && !(avd->flags & AVD_FLAGS_PERMISSIVE))
